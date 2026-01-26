@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="International supplier directory by country. Choose a country to see available vendors, highlight the primary vendor, and view vendor emails." />
+  <meta name="application-name" content="International Suppliers Directory" />
+  <meta name="author" content="Entity: International Suppliers" />
+  <title>International Suppliers (Country → Vendors)</title>
+  <style>
+    :root {
+      --accent: #FFC000;
+      --bg: #ffffff;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #d1d5db;
+      --grid: #e5e7eb;
+      --primaryTint: rgba(255, 192, 0, .18);
+      --shadow: 0 10px 24px rgba(17,24,39,.08);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, rgba(255,192,0,.10), rgba(255,255,255,0) 240px), var(--bg);
+      color: var(--text);
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 22px; }
+    header { display:flex; justify-content:space-between; align-items:flex-end; gap: 16px; flex-wrap: wrap; }
+    h1 { margin: 0; font-size: 22px; }
+    .sub { color: var(--muted); font-size: 13px; }
+    .meta { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+
+    .brand { display:flex; align-items:center; gap:12px; }
+    .logo { display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px;
+            border-radius:10px; border:1px solid var(--border);
+            background: linear-gradient(180deg, rgba(255,192,0,.30), rgba(255,192,0,.10)); }
+
+    .grid { display:grid; grid-template-columns: 1.15fr .85fr; gap: 14px; margin-top: 14px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    label { display:block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    input[type="text"] {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 12px 12px;
+      outline: none;
+      background: #fff;
+    }
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(255,192,0,.20);
+    }
+
+    .pillrow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top: 12px; }
+    .pill {
+      display:inline-flex; gap:8px; align-items:center;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+
+    .tablebox {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .thead {
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      padding: 10px 12px;
+      background: linear-gradient(180deg, rgba(255,192,0,.30), rgba(255,192,0,.10));
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      color: #3f3f46;
+      font-weight: 600;
+    }
+    .thead .hint { font-weight: 500; color: #52525b; }
+    .rows { display:block; }
+    .row {
+      display:flex; align-items:center; justify-content:space-between; gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--grid);
+    }
+    .row:last-child { border-bottom: none; }
+    .row:hover { background: rgba(17,24,39,.02); }
+    .vendor-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 13px; }
+    
+    .vendor-name .empid { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", monospace; font-size: 12px; color: var(--muted); margin-left: 6px; }
+.tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: #111827;
+      background: rgba(255,255,255,.8);
+      white-space: nowrap;
+    }
+    .tag.primary { background: var(--primaryTint); border-color: rgba(255,192,0,.55); }
+    .btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .btn:hover { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,192,0,.18); }
+    .btn:active { transform: translateY(1px); }
+
+    .emails {
+      margin-top: 12px;
+      border-top: 1px solid var(--grid);
+      padding-top: 12px;
+      display:none;
+    }
+    .emails h3 { margin: 0 0 8px; font-size: 14px; }
+    .emails ul { margin: 0; padding-left: 18px; }
+    .emails li { margin: 6px 0; }
+    a { color: #0b57d0; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      background: #111827;
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      box-shadow: 0 12px 24px rgba(0,0,0,.18);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .18s ease, transform .18s ease;
+      font-size: 12px;
+      pointer-events:none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    .codebox {
+      margin-top: 10px;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(17,24,39,.02);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      color: #111827;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <span class="logo" aria-hidden="true">
+          <!-- Earth logo (inline SVG, offline) -->
+          <svg viewBox="0 0 64 64" width="34" height="34" role="img" aria-label="Earth">
+            <defs>
+              <linearGradient id="g2" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stop-color="#3b82f6"/>
+                <stop offset="1" stop-color="#1d4ed8"/>
+              </linearGradient>
+            </defs>
+            <circle cx="32" cy="32" r="28" fill="url(#g2)"/>
+            <path d="M18 22c4-6 9-9 14-10 2 2 4 5 4 8-5 3-10 5-18 2z" fill="#22c55e" opacity=".95"/>
+            <path d="M44 18c6 4 9 9 10 14-2 2-5 4-8 4-3-5-5-10-2-18z" fill="#16a34a" opacity=".95"/>
+            <path d="M20 40c2 8 7 13 14 16 4-2 7-5 8-9-8-4-14-6-22-7z" fill="#22c55e" opacity=".95"/>
+            <path d="M46 38c-1 6-4 10-8 13-3-1-5-3-6-6 4-5 7-9 14-7z" fill="#16a34a" opacity=".95"/>
+            <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2"/>
+          </svg>
+        </span>
+        <div>
+          <h1>International Suppliers</h1>
+          <div class="sub">Pick a country → see available vendors (Primary highlighted) → click a vendor to view emails.</div>
+        </div>
+      </div>
+      <div class="sub meta" id="meta"></div>
+    </header>
+
+    <div class="grid">
+      <main class="card">
+        <label for="countrySearch">Country</label>
+        <input id="countrySearch" type="text" list="countriesList" placeholder="Type a country… e.g., Jordan" />
+        <datalist id="countriesList"></datalist>
+
+        <div class="pillrow" id="countryInfo" style="display:none;">
+          <span class="pill"><span class="dot"></span><span id="region"></span></span>
+          <span class="pill"><span class="dot" style="background:var(--muted)"></span><span>Entity (PO): <span id="entity"></span></span></span>
+          <span class="pill"><span class="dot" style="background:var(--muted)"></span><span>Currency: <span id="currency"></span></span></span>
+          <span class="pill"><span class="dot" style="background:var(--accent)"></span><span>Primary: <span id="primaryName"></span></span></span>
+        </div>
+
+        <div class="tablebox" id="vendorTable" style="display:none;">
+          <div class="thead">
+            <div>Vendors</div>
+            <div class="hint">Click “View emails”</div>
+          </div>
+          <div class="rows" id="vendors"></div>
+        </div>
+
+        <section class="emails" id="emails">
+          <h3>Emails for <span class="vendor-name" id="vendorTitle"></span></h3>
+          <div class="muted" id="noEmails" style="display:none;">No emails found for this vendor in the Excel file.</div>
+          <ul id="emailList"></ul>
+
+          <div class="pillrow" style="margin-top:12px;">
+            <button class="btn" id="copyEmailTemplateBtn">Copy email (Outlook template)</button>
+            <button class="btn" id="copyOutlookOftBtn">Copy Outlook form (.OFT text)</button>
+            <a href="Departments/ResourceAllocation/3%20Vendor%20Management%20Team/All%20Templates/Vendor%20Request%20for%20Dispatch%20-%20INTERNATIONAL.oft" target="_blank" rel="noopener" id="openIntlOftLink" class="btn" style="text-decoration:none;">Vendor Request for Dispatch - INTERNATIONAL.oft</a>
+
+            <button class="btn" id="copyAllEmailsBtn">Copy emails only</button>
+            <button class="btn" id="copyContactBlockBtn">Copy iCloud/Office contact block</button>
+          </div>
+
+          <div class="sub" style="margin-top:10px;">iCloud / Office friendly contact block (paste into Notes, Pages, Word, or email):</div>
+          <div class="codebox" id="contactBlock"></div>
+        </section>
+      </main>
+
+      <aside class="card">
+        <div class="sub" style="margin-bottom:10px;">Notes</div>
+        <ul class="muted" style="margin:0; padding-left: 18px;">
+          <li>Data source: <span class="meta">Intl Supplier by Country Reference Nov 2024 (8).xlsx</span></li>
+          <li>Includes: Region, <b>Entity to Use for PO creation</b>, Currency, Primary Vendor, Vendor Emails</li>
+          <li>Accent color taken from Sheet1: <span class="meta">#FFC000</span></li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Clipboard helper (works even on local file:// in most browsers)
+    async function copyToClipboard(text) {
+      // Best path (secure contexts)
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "COPY", text }, "*");
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+      // Fallback for file:// or restricted iframes
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      ta.style.left = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      return ok;
+    }
+
+    const DB = {"meta": {"sourceFile": "Intl Supplier by Country Reference Nov 2024 (8).xlsx", "accentFromSheet1": "#FFC000", "countriesCount": 188, "vendorsWithEmailCount": 9}, "aliases": {"SSE": "SSE Global", "STS": "STS Global", "H-Tech": "H-Tec", "Info Tech LTD/Shanghai Jiguan": "Info Tech LTD Shanghai Jiguan", "Tech Sputce": "TechSource"}, "countries": [{"country": "Argentina", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Barbados", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Bermuda", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Bolivia", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Brazil", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Chile", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}, {"name": "SSE", "key": "SSE Global"}]}, {"country": "Colombia", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}, {"name": "SSE", "key": "SSE Global"}]}, {"country": "Costa Rica", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}, {"name": "SSE", "key": "SSE Global"}]}, {"country": "Cuba", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Dominican Republic", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "STS", "key": "STS Global"}]}, {"country": "Ecuador", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "El Salvador", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Grenada", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Guadeloupe", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Guam", "region": "LATAM/ Caribbean", "entity": "Acuative Corps (USA)", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Guatemala", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Honduras", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Jamaica", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Martinique", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Mexico", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}, {"name": "STS", "key": "STS Global"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Nicaragua", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Panama", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "SSE", "key": "SSE Global"}]}, {"country": "Paraguay", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Peru", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Puerto Rico", "region": "LATAM/ Caribbean", "entity": "Acuative Corps (USA)", "currency": "USD", "primaryVendor": "Allied", "primaryVendorKey": "Allied", "vendors": [{"name": "Allied", "key": "Allied"}, {"name": "TechSource", "key": "TechSource"}, {"name": "Evolux", "key": "Evolux"}, {"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Saint Lucia", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "SSE", "key": "SSE Global"}]}, {"country": "Trinidad and Tobago", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Uruguay", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Venezuela", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Evolux", "primaryVendorKey": "Evolux", "vendors": [{"name": "Evolux", "key": "Evolux"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Virgin Islands", "region": "LATAM/ Caribbean", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "STS", "key": "STS Global"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Afghanistan", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Albania", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Algeria", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Andorra", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Angola", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Armenia", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Austria", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Azerbaijan", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Bahrain", "region": "EMEAR", "entity": "Acuative WLL", "currency": "USD", "primaryVendor": "STS", "primaryVendorKey": "STS Global", "vendors": [{"name": "STS", "key": "STS Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Belarus", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Belgium", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Benin", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Bhutan", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Bosnia and Herzegovina", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Botswana", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Brunei", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Bulgaria", "region": "EMEAR", "entity": "Acuative BV", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Burkina Faso", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Burundi", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Cameroon", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Cape Verde", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Cayman Islands", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Central African Republic", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Chad", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Comoros", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Congo DRC", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Congo Republic", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Cote D'Ivoire", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}, {"name": "SSE", "key": "SSE Global"}]}, {"country": "Croatia", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Cyprus", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Czech Republic", "region": "EMEAR", "entity": "Acuative BV", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "STS", "key": "STS Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Denmark", "region": "EMEAR", "entity": "Acuative BV", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Djibouti", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Egypt", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Equatorial Guinea", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Eritrea", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Estonia", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Ethiopia", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Faroe Islands", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "Euros", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Finland", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "France", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechnoCore", "key": "TechnoCore"}]}, {"country": "Gabon", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Gambia", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Georgia", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Germany", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechnoCore", "key": "TechnoCore"}]}, {"country": "Ghana", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Gibraltar", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "Euros", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Greece", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Greenland", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Guinea", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Guinea-Bissau", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Hungary", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Iceland", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Iran (Islamic Republic of)", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Iraq", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Ireland", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Israel", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Italy", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Jersey", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "GBP", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Jordan", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Kazakhstan", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Kenya", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Kuwait", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Kyrgyzstan", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Latvia", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Lebanon", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Lesotho", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Liberia", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Libya", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Liechtenstein", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "Euros", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Lithuania", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Luxembourg", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Macedonia", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Madagascar", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Malawi", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Mali", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Malta", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Mauritania", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Mauritius", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Moldova, Republic of", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Monaco", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "Euros", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "H-Tec", "key": "H-Tec"}]}, {"country": "Mongolia", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Montenegro", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Morocco", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Mozambique", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Myanmar (Burma)", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Namibia", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Netherlands", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "SSE Global", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE Global", "key": "SSE Global"}, {"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechnoCore", "key": "TechnoCore"}]}, {"country": "Niger", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Nigeria", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Norway", "region": "EMEAR", "entity": "Acuative BV", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Oman", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Pakistan", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "H-Tec", "key": "H-Tec"}, {"name": "STS", "key": "STS Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Palestinian Authority Territories", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Poland", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Portugal", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Qatar", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Romania", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Russian Federation", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Rwanda", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "San Marino", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "Euros", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Sao Tome & Principe", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Saudi Arabia", "region": "EMEAR", "entity": "Acuative WLL", "currency": "SAR", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Senegal", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Serbia", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Seychelles", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Sierra Leone", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Slovakia", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Slovenia", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Somalia", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "South Africa", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}, {"name": "STS", "key": "STS Global"}]}, {"country": "Spain", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Sudan", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}]}, {"country": "Swaziland", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Sweden", "region": "EMEAR", "entity": "Acuative BV", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Switzerland", "region": "EMEAR", "entity": "Acuative BV", "currency": "Euros", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Syrian Arab Republic", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}]}, {"country": "Tajikistan", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Tanzania", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Togo", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Tunisia", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Turkey", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Turkmenistan", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Uganda", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Ukraine", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "United Arab Emirates", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "United Kingdom", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "GBP", "primaryVendor": "Waves Tech", "primaryVendorKey": "Waves Tech", "vendors": [{"name": "Waves Tech", "key": "Waves Tech"}, {"name": "SSE", "key": "SSE Global"}, {"name": "H-Tech", "key": "H-Tec"}, {"name": "Tech Sputce", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Uzbekistan", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Yemen", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Zambia", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Zimbabwe", "region": "EMEAR", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Australia", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechnoCore", "key": "TechnoCore"}]}, {"country": "Bangladesh", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "SSE", "key": "SSE Global"}, {"name": "STS", "key": "STS Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechnoCore", "key": "TechnoCore"}]}, {"country": "Brunei", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Cambodia", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "China", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Info Tech LTD/Shanghai Jiguan", "primaryVendorKey": "Info Tech LTD Shanghai Jiguan", "vendors": [{"name": "Info Tech LTD/Shanghai Jiguan", "key": "Info Tech LTD Shanghai Jiguan"}, {"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Fiji", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Hong Kong", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "India", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "H-Tec", "key": "H-Tec"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Indonesia", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Japan", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Laos", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}]}, {"country": "Malaysia", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Maldives", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Nepal", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "SSE", "primaryVendorKey": "SSE Global", "vendors": [{"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "New Zealand", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechnoCore", "key": "TechnoCore"}]}, {"country": "North Korea", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Redex IT", "primaryVendorKey": "Redex IT", "vendors": [{"name": "Redex IT", "key": "Redex IT"}]}, {"country": "Papua New Guinea", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Philippines", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Singapore", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Soloman Islands", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "South Korea", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "Tech Domain", "key": "Tech Domain"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Sri Lanka", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "STS", "primaryVendorKey": "STS Global", "vendors": [{"name": "STS", "key": "STS Global"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Taiwan", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "SSE", "key": "SSE Global"}]}, {"country": "Thailand", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "Tech Domain", "primaryVendorKey": "Tech Domain", "vendors": [{"name": "Tech Domain", "key": "Tech Domain"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechnoCore", "key": "TechnoCore"}, {"name": "TechSource", "key": "TechSource"}]}, {"country": "Timor", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Tonga", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechSource", "primaryVendorKey": "TechSource", "vendors": [{"name": "TechSource", "key": "TechSource"}, {"name": "Tech Domain", "key": "Tech Domain"}]}, {"country": "Vietnam", "region": "Asia Pacific", "entity": "Acuative Ltd", "currency": "USD", "primaryVendor": "TechnoCore", "primaryVendorKey": "TechnoCore", "vendors": [{"name": "TechnoCore", "key": "TechnoCore"}, {"name": "SSE", "key": "SSE Global"}, {"name": "TechSource", "key": "TechSource"}]}], "vendors": {"Allied": {"displayName": "Allied", "emails": []}, "Evolux": {"displayName": "Evolux", "emails": ["arezende@evoluxconsulting.com", "escalations@evoluxconsulting.com", "gramos@evoluxconsulting.com", "sales@evoluxconsulting.com", "servicedesk@evoluxconsulting.com", "tlopes@evoluxconsulting.com"]}, "H-Tec": {"displayName": "H-Tec", "emails": ["darrell.s@htechsupports.com", "operations@htechsupports.com", "sales@htechsupports.com"]}, "Info Tech LTD Shanghai Jiguan": {"displayName": "Info Tech LTD Shanghai Jiguan", "emails": ["hulin@it188.com", "william@it188.com"]}, "Redex IT": {"displayName": "Redex IT", "emails": []}, "SSE Global": {"displayName": "SSE Global", "emails": ["Mohsin.khan@ssetechs.com", "hassan.khan@ssetechs.com", "helpdesk@ssetechs.com", "sales@ssetechs.com"]}, "STS Global": {"displayName": "STS Global", "emails": ["Sardar@stsglobal247.com", "abu.huzaifa@stslgobal247.com", "operations@stsglobal247.com", "sales@stsglobal247.com", "yusuf@stsglobal247.com"]}, "Tech Domain": {"displayName": "Tech Domain", "emails": ["ali.naqi@techdomain.com.au", "istkhar@techdomain.com.au", "reza@techdomain.com.au", "support@techdomain.com.au", "uzair.khan@techdomain.com.au", "zubair.razzaq@techdomain.com.au"]}, "TechSource": {"displayName": "TechSource", "emails": ["fahad@techsource-managed.com.au", "hamza@techsource-managed.com.au", "sales@techsource-managed.com.au", "sultan@techsource-managed.com.au", "syed.umer@techsource-managed.com.au", "waqar@techsource-managed.com.au"]}, "TechnoCore": {"displayName": "TechnoCore", "emails": ["Mpatel@technoglobal24.com", "hitesh@technoglobal24.com", "support@technoglobal24.com"]}, "Waves Tech": {"displayName": "Waves Tech", "emails": ["dispatch@wavestech.co", "info@wavestech.co", "mst@wavestech.co"]}}};
+
+    // Vendor → Emp ID (International Suppliers tab only)
+    const VENDOR_EMP_ID = {
+      'STS Global': '13628',
+      'TechnoCore': '13648',
+      'SSE Global': '13625',
+      'Tech Domain': '14318',
+      'Evolux': '13800',
+      'Info Tech LTD Shanghai Jiguan': '13558',
+      'Waves Tech': '14354',
+      'HyTech': '13563',
+      'H-Tec': '13487',
+      'Brexons': '14350'
+    };
+
+    function getEmpId(keyOrName) {
+      const k = (keyOrName || '').toString().trim();
+      if (!k) return '';
+      // Try direct key
+      if (VENDOR_EMP_ID[k]) return VENDOR_EMP_ID[k];
+      // Try alias normalization
+      const aliased = (DB.aliases && DB.aliases[k]) ? DB.aliases[k] : '';
+      if (aliased && VENDOR_EMP_ID[aliased]) return VENDOR_EMP_ID[aliased];
+      return '';
+    }
+
+    const $ = (id) => document.getElementById(id);
+    const countrySearch = $('countrySearch');
+    const countriesList = $('countriesList');
+    const vendorsWrap = $('vendors');
+    const vendorTable = $('vendorTable');
+    const emailsBox = $('emails');
+    const emailList = $('emailList');
+    const vendorTitle = $('vendorTitle');
+    const noEmails = $('noEmails');
+    const countryInfo = $('countryInfo');
+    const regionEl = $('region');
+    const entityEl = $('entity');
+    const currencyEl = $('currency');
+    const primaryNameEl = $('primaryName');
+    const metaEl = $('meta');
+    const toast = $('toast');
+    const copyAllEmailsBtn = $('copyAllEmailsBtn');
+    const copyContactBlockBtn = $('copyContactBlockBtn');
+    const copyEmailTemplateBtn = $('copyEmailTemplateBtn');
+    const contactBlockEl = $('contactBlock');
+
+    const norm = (s) => (s || '').toString().trim().toLowerCase();
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1400);
+    }
+
+    // Fill datalist
+    DB.countries
+      .map(c => c.country)
+      .sort((a,b)=>a.localeCompare(b))
+      .forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        countriesList.appendChild(opt);
+      });
+
+    metaEl.textContent = "Countries: " + DB.meta.countriesCount + " • Vendors w/ emails: " + DB.meta.vendorsWithEmailCount;
+
+    function clearUI() {
+      vendorsWrap.innerHTML = '';
+      vendorTable.style.display = 'none';
+      emailsBox.style.display = 'none';
+      emailList.innerHTML = '';
+      noEmails.style.display = 'none';
+      countryInfo.style.display = 'none';
+      contactBlockEl.textContent = '';
+    }
+
+    function renderCountry(countryObj) {
+      clearUI();
+      if (!countryObj) return;
+
+      regionEl.textContent = countryObj.region || '—';
+      entityEl.textContent = countryObj.entity || '—';
+      currencyEl.textContent = countryObj.currency || '—';
+      primaryNameEl.textContent = countryObj.primaryVendor || '—';
+      countryInfo.style.display = 'flex';
+
+      const pvKey = countryObj.primaryVendorKey;
+      countryObj.vendors.forEach(v => {
+        const row = document.createElement('div');
+        row.className = 'row';
+
+        const left = document.createElement('div');
+        const tag = document.createElement('span');
+        tag.className = 'tag' + (v.key === pvKey ? ' primary' : '');
+        tag.textContent = (v.key === pvKey) ? 'PRIMARY' : 'VENDOR';
+
+        const name = document.createElement('span');
+        name.className = 'vendor-name';
+        name.textContent = v.name;
+
+        const empId = getEmpId(v.key || v.name);
+        if (empId) {
+          const emp = document.createElement('span');
+          emp.className = 'empid';
+          emp.textContent = ' (Emp ID: ' + empId + ')';
+          name.appendChild(emp);
+        }
+
+        left.appendChild(tag);
+        left.appendChild(document.createTextNode(' '));
+        left.appendChild(name);
+
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.textContent = 'View emails';
+        btn.addEventListener('click', () => renderVendor(v, countryObj));
+
+        row.appendChild(left);
+        row.appendChild(btn);
+        vendorsWrap.appendChild(row);
+      });
+
+      vendorTable.style.display = 'block';
+    }
+
+    function renderVendor(v, countryObj) {
+      emailsBox.style.display = 'block';
+      const empId = getEmpId(v.key || v.name);
+      vendorTitle.textContent = v.name + (empId ? ' (Emp ID: ' + empId + ')' : '');
+
+      const record = DB.vendors[v.key];
+      const emails = (record && record.emails) ? record.emails : [];
+
+      emailList.innerHTML = '';
+      if (!emails.length) {
+        noEmails.style.display = 'block';
+        contactBlockEl.textContent = '';
+        return;
+      }
+      if (copyEmailTemplateBtn) { copyEmailTemplateBtn.onclick = () => showToast('No emails to copy'); }
+      noEmails.style.display = 'none';
+
+      emails.forEach(e => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = 'mailto:' + e;
+        a.textContent = e;
+        li.appendChild(a);
+        emailList.appendChild(li);
+      });
+
+      const blockLines = [
+        "Vendor: " + v.name,
+        "Emp ID: " + (empId || "-"),
+        "Country: " + countryObj.country,
+        "Region: " + (countryObj.region || "-"),
+        "Entity to Use for PO creation: " + (countryObj.entity || "-"),
+        "Currency: " + (countryObj.currency || "-"),
+        "Primary vendor for country: " + (countryObj.primaryVendor || "-"),
+        "",
+        "Emails:"
+      ].concat(emails.map(x => "- " + x));
+
+      const block = blockLines.join("\n");
+      contactBlockEl.textContent = block;
+
+      
+      // Copy email body for Outlook template (paste into the .OFT email body)
+      if (copyEmailTemplateBtn) {
+        copyEmailTemplateBtn.onclick = async () => {
+          const vendor = v.name || '(Vendor)';
+          const body = [
+            `Hello ${vendor} Team,`,
+            ``,
+            `Please assist with dispatch for the below request:`,
+            ``,
+            `Ticket: `,
+            `Site Address: `,
+            `PO #: `,
+            `Emp ID: ${empId || ""}`,
+            `WO / SR #: `,
+            ``,
+            `Scope of Work: `,
+            `Requested Date/Time (local): `,
+            `Access / Requirements: `,
+            ``,
+            `Please confirm:`,
+            `1) Availability`,
+            `2) ETA`,
+            `3) Hourly rate + trip / travel charges`,
+            ``,
+            `Thank you,`,
+            `Dispatch Team`
+          ].join('\n');
+
+          try {
+            const ok = await copyToClipboard(body);
+            if (!ok) throw new Error('copy blocked');
+            showToast('Copied email body ✔');
+          } catch (e) {
+            showToast('Copy failed (browser restriction)');
+          }
+        };
+      }
+
+copyAllEmailsBtn.onclick = async () => {
+        const txt = emails.join('; ');
+        try {
+          const ok = await copyToClipboard(txt);
+          if (!ok) throw new Error('copy blocked');
+          showToast('Copied emails ✔');
+        } catch (e) {
+          showToast('Copy failed (browser restriction)');
+        }
+      };
+
+      // Copy Outlook .OFT-style template text (paste into Outlook new email)
+      const copyOutlookOftBtn = document.getElementById('copyOutlookOftBtn');
+      if (copyOutlookOftBtn) {
+        copyOutlookOftBtn.onclick = async () => {
+          const vendor = v.name || '(Vendor)';
+          const toLine = emails.length ? emails.join('; ') : '(add vendor email)';
+          const subject = `Vendor Request for Dispatch - INTERNATIONAL | ${vendor}`;
+
+          const body = [
+            `Hello ${vendor} Team,`,
+            ``,
+            `Please assist with the dispatch request below:`,
+            ``,
+            `Ticket / WO #: `,
+            `Site Name   : `,
+            `Site Address: `,
+            `City / Country: `,
+            `Onsite Contact (POC): `,
+            `POC Phone  : `,
+            `Emp ID     : ${empId || ""}`,
+            ``,
+            `Scope of Work: `,
+            `Requested Date/Time (local): `,
+            `Access / Requirements: `,
+            ``,
+            `Please confirm:`,
+            `1) Availability`,
+            `2) ETA`,
+            `3) Hourly rate + trip / travel charges`,
+            ``,
+            `Thank you,`,
+            `Dispatch Team`
+          ].join('\n');
+
+          const combined = `TO: ${toLine}\nSUBJECT: ${subject}\n\n${body}`;
+          try {
+            const ok = await copyToClipboard(combined);
+            if (!ok) throw new Error('copy blocked');
+            showToast('Copied Outlook form ✔');
+          } catch (e) {
+            showToast('Copy failed (browser restriction)');
+          }
+        };
+      }
+
+      // Open the actual .OFT file (if accessible) and copy the vendor emails to clipboard
+      const openIntlOftLink = document.getElementById('openIntlOftLink');
+      if (openIntlOftLink) {
+        openIntlOftLink.onclick = async (e) => {
+          try {
+            e.preventDefault();
+            // Open the .OFT file in a new tab/window (browser may download then open in Outlook)
+            window.open(openIntlOftLink.href, '_blank', 'noopener');
+          } catch (_) {}
+
+          const txt = emails.length ? emails.join('; ') : '';
+          if (!txt) { showToast('No emails to copy'); return; }
+
+          try {
+            const ok = await copyToClipboard(txt);
+            if (!ok) throw new Error('copy blocked');
+            showToast('Copied emails ✔');
+          } catch (err) {
+            showToast('Copy failed (browser restriction)');
+          }
+        };
+      }
+
+
+
+      copyContactBlockBtn.onclick = async () => {
+        try {
+          const ok = await copyToClipboard(block);
+          if (!ok) throw new Error('copy blocked');
+          showToast('Copied contact block ✔');
+        } catch (e) {
+          showToast('Copy failed (browser restriction)');
+        }
+      };
+    }
+
+    function findCountryByName(name) {
+      const target = norm(name);
+      return DB.countries.find(c => norm(c.country) === target);
+    }
+
+    countrySearch.addEventListener('input', () => {
+      const c = findCountryByName(countrySearch.value);
+      renderCountry(c);
+    });
+
+    countrySearch.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const c = findCountryByName(countrySearch.value);
+        renderCountry(c);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UFH Admin — Upload Excel to Cloud DB</title>
+  <style>
+    body{font-family:Arial, sans-serif; margin:24px; max-width:920px;}
+    .card{border:1px solid #ddd; border-radius:12px; padding:16px; margin-bottom:14px;}
+    label{display:block; margin:10px 0 6px; font-weight:600;}
+    input,select,button{font-size:16px;}
+    input[type=text]{width:100%; padding:10px; border:1px solid #ccc; border-radius:8px;}
+    input[type=file]{width:100%;}
+    button{padding:10px 14px; border-radius:10px; border:1px solid #999; cursor:pointer;}
+    button.primary{background:#1f6feb; color:white; border-color:#1f6feb;}
+    pre{background:#0b1020; color:#d7e0ff; padding:12px; border-radius:10px; overflow:auto;}
+    .muted{color:#555;}
+  </style>
+</head>
+<body>
+  <h1>UFH Admin — Upload Excel to Cloud DB</h1>
+  <p class="muted">This uploads an Excel file to your backend API, and creates <b>one table per sheet</b>.</p>
+
+  <div class="card">
+    <label>API Base URL (Backend)</label>
+    <input id="apiBase" type="text" placeholder="https://your-backend.onrender.com" />
+    <label>Prefix (tables will be: prefix__sheetname)</label>
+    <input id="prefix" type="text" value="ars_technician" />
+    <label>Mode</label>
+    <select id="mode">
+      <option value="replace" selected>replace (drop & recreate)</option>
+      <option value="append">append</option>
+    </select>
+    <label>Excel File</label>
+    <input id="file" type="file" accept=".xlsx,.xls" />
+    <div style="margin-top:12px;">
+      <button class="primary" id="btnUpload">Upload</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="status" class="muted">Ready.</div>
+    <pre id="out">{}</pre>
+  </div>
+
+<script>
+const $ = (id)=>document.getElementById(id);
+const statusEl = $('status');
+const outEl = $('out');
+
+$('btnUpload').addEventListener('click', async ()=>{
+  const base = String($('apiBase').value||'').replace(/\/+$/,'');
+  const prefix = String($('prefix').value||'dataset').trim();
+  const mode = $('mode').value;
+  const f = $('file').files?.[0];
+  if(!base) return alert('Enter API Base URL');
+  if(!f) return alert('Choose an Excel file');
+
+  statusEl.textContent = 'Uploading...';
+  outEl.textContent = '{}';
+
+  const fd = new FormData();
+  fd.append('file', f);
+
+  const url = `${base}/api/upload?prefix=${encodeURIComponent(prefix)}&mode=${encodeURIComponent(mode)}`;
+  const r = await fetch(url, { method:'POST', body: fd });
+  const t = await r.text();
+  try{
+    outEl.textContent = JSON.stringify(JSON.parse(t), null, 2);
+  }catch(_){
+    outEl.textContent = t;
+  }
+  statusEl.textContent = r.ok ? 'Done.' : 'Error.';
+});
+</script>
+</body>
+</html>

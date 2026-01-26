@@ -1,0 +1,1067 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Flex Tech Finder (Tier 2) — Closest by ZIP</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root{
+      --bg1:#e8fff3;
+      --bg2:#eaf3ff;
+      --ink:#0b1b2b;
+      --muted:#3a556a;
+      --border: rgba(37,99,235,.25);
+      --border2: rgba(17,163,127,.25);
+      --accent:#2563eb;
+      --accent2:#11a37f;
+      --card: rgba(255,255,255,.78);
+    }
+
+    body{
+      font-family: Arial, sans-serif;
+      margin:0;
+      padding:24px;
+      color:var(--ink);
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+    }
+
+    .card{
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--card);
+      backdrop-filter: blur(6px);
+      border-radius: 16px;
+      padding: 18px;
+      border: 1px solid rgba(37,99,235,.18);
+      box-shadow: 0 10px 30px rgba(0,0,0,.06);
+    }
+
+    h1{
+      margin:0 0 8px 0;
+      font-size: 22px;
+      letter-spacing: .2px;
+    }
+
+    .muted{
+      color: var(--muted);
+      margin: 6px 0 0 0;
+      line-height: 1.4;
+    }
+
+    label{
+      display:block;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    input, textarea{
+      width:100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(17,163,127,.35);
+      outline: none;
+      box-sizing: border-box;
+      background: #fff;
+      font-size: 14px;
+    }
+
+    textarea{ min-height: 110px; resize: vertical; }
+
+    input:focus, textarea:focus{
+      border-color: rgba(37,99,235,.65);
+      box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+    }
+
+    .row{
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pill{
+      display:inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(17,163,127,.35);
+      background: rgba(17,163,127,.06);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .btn{
+      display:inline-block;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(37,99,235,.35);
+      background: rgba(37,99,235,.06);
+      cursor: pointer;
+      user-select: none;
+      font-weight: 700;
+    }
+
+    .btn:hover{ background: rgba(37,99,235,.10); }
+
+    .btn.secondary{
+      border-color: rgba(17,163,127,.35);
+      background: rgba(17,163,127,.06);
+    }
+
+    .btn.secondary:hover{ background: rgba(17,163,127,.10); }
+
+    .btn:disabled{
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .split{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 720px){
+      .split{ grid-template-columns: 1fr; }
+    }
+
+    .tech-card{
+      margin-top: 14px;
+      border-radius: 16px;
+      padding: 14px;
+      background: #fff;
+      border: 1px solid rgba(17,163,127,.22);
+      box-shadow: 0 10px 24px rgba(0,0,0,.06);
+    }
+
+    .tech-name{
+      display:flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .badge{
+      font-size: 12px;
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(37,99,235,.35);
+      background: rgba(37,99,235,.06);
+      white-space: nowrap;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 14px;
+    }
+    @media (max-width: 720px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .kv{
+      border: 1px solid rgba(37,99,235,.14);
+      border-left: 4px solid rgba(17,163,127,.55);
+      border-radius: 12px;
+      padding: 10px;
+      background: linear-gradient(135deg, rgba(17,163,127,.05), rgba(37,99,235,.05));
+    }
+
+    .k{ font-size: 12px; font-weight: 800; color: var(--muted); margin-bottom: 4px; }
+    .v{ font-size: 14px; font-weight: 700; word-break: break-word; }
+
+    .empty{
+      border: 1px dashed rgba(37,99,235,.35);
+      border-radius: 16px;
+      padding: 14px;
+      margin-top: 14px;
+      background: rgba(255,255,255,.70);
+    }
+
+    code{
+      background: rgba(37,99,235,.08);
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(37,99,235,.14);
+    }
+  
+
+/* List-mode table (state-only / last-name search) */
+.table-wrap{ overflow:auto; border:1px solid var(--border); border-radius: 14px; }
+.tbl{ width:100%; border-collapse: collapse; font-size: 14px; }
+.tbl th,.tbl td{ padding:10px 12px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
+.tbl thead th{ position: sticky; top: 0; background: rgba(0,0,0,.35); backdrop-filter: blur(6px); }
+</style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>USA Tier 2 Flex Tech Finder — Closest by ZIP</h1>
+    <p class="muted">
+      Filter by <strong>state</strong>, paste the ticket (optional), enter a <strong>ZIP</strong>, then click <strong>Find Closest</strong>.
+      The tool calculates distance using the same Haversine approach as the Oncall Lookup and uses the shared <code>zipdb</code> + a dedicated <code>Tier 2 techdb</code>.
+    </p>
+
+    <div class="split">
+      <div>
+        <label for="stateInput">State filter (abbr or full name)</label>
+        <input id="stateInput" list="stateList" placeholder="Example: CA or California (leave empty = auto from ZIP)" />
+        <datalist id="stateList"></datalist>
+      </div>
+      <div>
+        <label for="zipInput">Ticket ZIP (required for Find Closest)</label>
+        <input id="zipInput" inputmode="numeric" placeholder="Required for Find Closest — e.g. 90210" />
+      </div>
+    </div>
+
+        <label for="lastNameInput">Last name (optional)</label>
+    <input id="lastNameInput" placeholder="Example: Young (works without ZIP or State)" />
+
+    <label for="ticketInput">Ticket text (optional)</label>
+    <textarea id="ticketInput" placeholder="Paste the ticket here. You can click 'Extract ZIP' to fill the ZIP field."></textarea>
+
+    <div class="row" style="margin-top:10px;">
+      <button class="btn secondary" id="uploadDbBtn" type="button">Upload Tech DB (Excel)</button>
+      <input id="techDbUpload" type="file" accept=".xlsx,.xls" style="display:none;" />
+      <button class="btn secondary" id="resetDbBtn" type="button" title="Use built-in techdb.js">Reset DB</button>
+      <button class="btn secondary" id="downloadDbBtn" type="button" title="Download a techdb.js file generated from the uploaded Excel" disabled>Download techdb.js</button>
+      <div class="pill" id="dbPill">DB: built-in</div>
+    </div>
+
+    <div class="row">
+      <div class="pill" id="statusPill">Ready</div>
+      <button class="btn secondary" id="extractBtn" type="button">Extract ZIP</button>
+      <button class="btn" id="findBtn" type="button">Find Closest</button>
+      <button class="btn secondary" id="prevBtn" type="button" disabled>Prev</button>
+      <button class="btn secondary" id="nextBtn" type="button" disabled>Next</button>
+      <button class="btn" id="clearBtn" type="button">Clear</button>
+    </div>
+
+    <div id="results"></div>
+
+    <p class="muted" style="margin-top:16px;">
+      Notes: The tool prefers <code>USA Tier 2 Flex Tech</code> when present in the Tech DB; otherwise it falls back to <code>TIER II TECH</code>. Tech location is based on the tech’s home ZIP in <code>techdb</code>.
+      If you want to include other tiers later, tell me which type names to include.
+    </p>
+  </div>
+
+  <!-- Shared offline databases (ZIP DB is shared with Oncall Lookup) -->
+  <script src="config.js"></script>
+  <script src="../oncall_webapp_v8/zipdb.js"></script>
+  <script src="techdb.js"></script>
+
+  <script>
+
+    // --- Helpers ---
+    const $ = (id) => document.getElementById(id);
+    const statusPill = $("statusPill");
+    const resultsDiv = $("results");
+
+    function setStatus(text){ statusPill.textContent = text; }
+
+    function apiBase(){ return String(window.API_BASE || '').replace(/\/+$/,''); }
+    async function fetchJson(url){
+      const r = await fetch(url, { headers: { 'Accept':'application/json' }});
+      if(!r.ok) throw new Error(`API error ${r.status}: ${await r.text()}`);
+      return await r.json();
+    }
+
+
+    function digitsOnly(s){ return String(s || "").replace(/\D+/g, ""); }
+
+    function normZip(z){
+      const d = digitsOnly(z);
+      if (!d) return "";
+      const five = d.slice(0, 5);
+      return five.padStart(5, "0");
+    }
+
+    function extractZipFromText(text){
+      const t = String(text || "");
+      // Prefer patterns like "ZIP: 12345" or "Zip Code 12345-6789"
+      const m1 = t.match(/\bzip\s*(?:code)?\s*[:#-]?\s*(\d{5})(?:-\d{4})?\b/i);
+      if (m1) return m1[1];
+      const m2 = t.match(/\b(\d{5})(?:-\d{4})?\b/);
+      if (m2) return m2[1];
+      return "";
+    }
+
+    function haversineMiles(lat1, lon1, lat2, lon2){
+      const R = 3958.7613; // miles
+      const toRad = (d) => (d * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // --- State name maps (for user input convenience) ---
+    const STATE_NAME_TO_ABBR = {
+      "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA",
+      "Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA","Maine":"ME",
+      "Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS","Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV",
+      "New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK","Oregon":"OR",
+      "Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA",
+      "Washington":"WA","West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC"
+    };
+    const STATE_ABBR_TO_NAME = Object.fromEntries(Object.entries(STATE_NAME_TO_ABBR).map(([k,v]) => [v,k]));
+
+    function toStateAbbr(input){
+      const raw = String(input || "").trim();
+      if (!raw) return "";
+      if (raw.length === 2) return raw.toUpperCase();
+      const norm = raw
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+      return STATE_NAME_TO_ABBR[norm] || "";
+    }
+
+    // Fill datalist for better UX
+    (function fillStateList(){
+      const dl = $("stateList");
+      dl.innerHTML = Object.entries(STATE_NAME_TO_ABBR)
+        .map(([name, abbr]) => `<option value="${abbr}">${name}</option>`)
+        .join("");
+    })();
+
+
+    // --- Optional: Load Tech DB from cloud API (preferred) ---
+    // Table name if you used the included seed script:
+    //   usa_tier_2_flex_tech
+    (async function tryLoadCloudTechDb(){
+      const base = apiBase();
+      if(!base) return;
+      try{
+        setStatus('Loading Tech DB from cloud API...');
+        const table = 'usa_tier_2_flex_tech';
+        const j = await fetchJson(`${base}/api/export/${table}?format=aoa&limit=200000`);
+
+        if(j && j.ok && Array.isArray(j.rows) && j.rows.length){
+          // Replace bundled techdb with the cloud copy (normalize columns -> the expected 9-column AOA)
+          try{
+            const cols = Array.isArray(j.columns) ? j.columns.map(c => String(c||'')) : [];
+            const norm = (s) => String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+            const idxMap = new Map(cols.map((c,i)=>[norm(c), i]));
+            const pickIdx = (names) => {
+              for (const n of names){
+                const k = norm(n);
+                if (idxMap.has(k)) return idxMap.get(k);
+              }
+              return -1;
+            };
+            const I = {
+              tech: pickIdx(['Tech ID','tech_id','techid','id','TechID']),
+              first: pickIdx(['First Name','first_name','firstname','First']),
+              last: pickIdx(['Last Name','last_name','lastname','Last']),
+              region: pickIdx(['Region','region']),
+              zone: pickIdx(['Zone','zone']),
+              type: pickIdx(['Type','type']),
+              city: pickIdx(['City','city']),
+              state: pickIdx(['State','state']),
+              zip: pickIdx(['Zip','ZIP','zip','zip_code','ZIP Code','postal_code'])
+            };
+
+            const toStr = (v) => (v == null ? '' : String(v));
+            const fixed = (Array.isArray(j.rows) ? j.rows : []).map(r => (
+              [
+                I.tech>=0 ? toStr(r[I.tech]) : '',
+                I.first>=0 ? toStr(r[I.first]) : '',
+                I.last>=0 ? toStr(r[I.last]) : '',
+                I.region>=0 ? toStr(r[I.region]) : '',
+                I.zone>=0 ? toStr(r[I.zone]) : '',
+                I.type>=0 ? toStr(r[I.type]) : '',
+                I.city>=0 ? toStr(r[I.city]) : '',
+                I.state>=0 ? toStr(r[I.state]) : '',
+                I.zip>=0 ? toStr(r[I.zip]) : '',
+              ]
+            ));
+
+            window.TECH_DB_ROWS = fixed.length ? fixed : j.rows;
+          }catch(_){
+            window.TECH_DB_ROWS = j.rows;
+          }
+
+          // If user is NOT using an uploaded override, update the DB pill
+          try{
+            if(!(Array.isArray(TECH_ROWS_OVERRIDE) && TECH_ROWS_OVERRIDE.length)){
+              setDbPill(`DB: cloud — ${j.rows.length.toLocaleString()}`);
+            }
+          }catch(_){ /* ignore */ }
+
+          // Rebuild the derived list so the UI actually uses the cloud DB
+          try{
+            rebuildTechList();
+            setStatus(`Ready — Flex techs loaded: ${ALL_TIER2_TECHS.length.toLocaleString()}`);
+            refreshResultsAfterDbChange();
+          }catch(_){ /* ignore */ }
+
+          return;
+        }
+
+        // Cloud returned nothing -> keep bundled DB
+        setStatus('DB: built-in');
+      }catch(e){
+        console.warn('Cloud techdb load failed; using built-in techdb.js', e);
+        setStatus('DB: built-in');
+      }
+    })();
+
+    // --- Build ZIP index (ZIP -> lat/lon/state/city) ---
+    function buildZipIndex(){
+      const rows = window.ZIP_DB_ROWS;
+      if (!Array.isArray(rows)) return new Map();
+      const m = new Map();
+      for (const r of rows){
+        if (!r || r.length < 5) continue;
+        const z = normZip(r[0]);
+        const lat = Number(r[1]);
+        const lon = Number(r[2]);
+        const city = String(r[3] || "");
+        const st = String(r[4] || "").toUpperCase();
+        if (z && Number.isFinite(lat) && Number.isFinite(lon)){
+          if (!m.has(z)) m.set(z, { lat, lon, city, state: st });
+        }
+      }
+      return m;
+    }
+
+    const ZIP_INDEX = buildZipIndex();
+
+    // --- Tech parsing + override (Flex-only upload) ---
+    const LS_ROWS_KEY = "UFH_FLEX_TECH_DB_ROWS_V8";
+    const LS_META_KEY = "UFH_FLEX_TECH_DB_META_V8";
+
+    const dbPill = $("dbPill");
+    const uploadDbBtn = $("uploadDbBtn");
+    const techDbUpload = $("techDbUpload");
+    const resetDbBtn = $("resetDbBtn");
+    const downloadDbBtn = $("downloadDbBtn");
+
+    let TECH_ROWS_OVERRIDE = null;
+    let TECH_META_OVERRIDE = null;
+    let ALL_TIER2_TECHS = [];
+
+    function setDbPill(text){ if (dbPill) dbPill.textContent = text; }
+
+    function getActiveTechRows(){
+      return (Array.isArray(TECH_ROWS_OVERRIDE) && TECH_ROWS_OVERRIDE.length) ? TECH_ROWS_OVERRIDE : window.TECH_DB_ROWS;
+    }
+
+    function normalizeType(t){
+      return String(t || "").trim().toUpperCase().replace(/\s+/g, " ");
+    }
+
+    function isUsaTier2FlexType(t){
+      const s = normalizeType(t);
+      if (!s) return false;
+      if (s === "USA TIER 2 FLEX TECH" || s === "USA TIER II FLEX TECH" || s === "USA TIER2 FLEX TECH") return true;
+      const hasUsa = /\bUSA\b/.test(s) || /\bUS\b/.test(s);
+      const hasFlex = /\bFLEX\b/.test(s);
+      const hasTier2 = s.includes("TIER 2") || s.includes("TIER II") || s.includes("TIER2");
+      return hasUsa && hasFlex && hasTier2;
+    }
+
+    function hasAnyUsaTier2Flex(rows){
+      if (!Array.isArray(rows)) return false;
+      for (const r of rows){
+        if (!r || r.length < 6) continue;
+        if (isUsaTier2FlexType(r[5])) return true;
+      }
+      return false;
+    }
+
+    function getFlexTier2Techs(rows){
+      if (!Array.isArray(rows)) return [];
+      const useUsaFlexType = hasAnyUsaTier2Flex(rows);
+      const out = [];
+      for (const r of rows){
+        if (!r || r.length < 9) continue;
+        const typeRaw = r[5];
+        const typeNorm = normalizeType(typeRaw);
+        if (useUsaFlexType){
+          if (!isUsaTier2FlexType(typeRaw)) continue;
+        } else {
+          if (typeNorm !== "TIER II TECH") continue;
+        }
+        out.push({
+          tech_id: String(r[0] || "").trim(),
+          first_name: String(r[1] || "").trim(),
+          last_name: String(r[2] || "").trim(),
+          region: String(r[3] || "").trim(),
+          zone: String(r[4] || "").trim(),
+          type: String(r[5] || "").trim(),
+          city: String(r[6] || "").trim(),
+          state: String(r[7] || "").trim().toUpperCase(),
+          zip: normZip(r[8])
+        });
+      }
+      return out;
+    }
+
+    function rebuildTechList(){
+      ALL_TIER2_TECHS = getFlexTier2Techs(getActiveTechRows());
+    }
+
+    function loadOverrideFromStorage(){
+      try{
+        const raw = localStorage.getItem(LS_ROWS_KEY);
+        if (!raw) return false;
+        const rows = JSON.parse(raw);
+        if (!Array.isArray(rows) || !rows.length) return false;
+        TECH_ROWS_OVERRIDE = rows;
+        const metaRaw = localStorage.getItem(LS_META_KEY);
+        TECH_META_OVERRIDE = metaRaw ? JSON.parse(metaRaw) : null;
+        const label = TECH_META_OVERRIDE?.filename ? `DB: uploaded (${TECH_META_OVERRIDE.filename})` : "DB: uploaded";
+        setDbPill(`${label} — ${rows.length.toLocaleString()}`);
+        if (downloadDbBtn) downloadDbBtn.disabled = false;
+        return true;
+      }catch(_){
+        return false;
+      }
+    }
+
+    function saveOverrideToStorage(rows, meta){
+      try{
+        localStorage.setItem(LS_ROWS_KEY, JSON.stringify(rows));
+        localStorage.setItem(LS_META_KEY, JSON.stringify(meta || {}));
+      }catch(_){ }
+    }
+
+    function clearOverride(){
+      TECH_ROWS_OVERRIDE = null;
+      TECH_META_OVERRIDE = null;
+      try{
+        localStorage.removeItem(LS_ROWS_KEY);
+        localStorage.removeItem(LS_META_KEY);
+      }catch(_){ }
+      const builtinCount = Array.isArray(window.TECH_DB_ROWS) ? window.TECH_DB_ROWS.length : 0;
+      setDbPill(`DB: built-in — ${builtinCount.toLocaleString()}`);
+      if (downloadDbBtn) downloadDbBtn.disabled = true;
+    }
+
+    function getField(obj, keys){
+      for (const k of keys){
+        if (Object.prototype.hasOwnProperty.call(obj, k)) return obj[k];
+      }
+      return "";
+    }
+
+    async function loadFlexTechDbFromFile(file){
+      if (!window.XLSX) throw new Error("XLSX library not loaded. (Internet required to load XLSX)");
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, {type:'array'});
+      // Use the LAST sheet (the workbook often contains multiple region sheets,
+      // and the relevant one for Flex is typically the final tab).
+      const lastSheetName = wb.SheetNames[wb.SheetNames.length - 1];
+      const ws = wb.Sheets[lastSheetName];
+      const json = XLSX.utils.sheet_to_json(ws, {defval:''});
+
+      const rows = [];
+      const typeExamples = new Set();
+
+      for (const r of json){
+        const techId = String(getField(r, ["Tech ID","TechID","TECH ID","TECH_ID","ID"]) ?? "").trim();
+        if (!techId) continue;
+
+        const country = String(getField(r, ["Country","COUNTRY"]) ?? "").trim().toUpperCase();
+        if (country && country !== 'US') continue;
+
+        const typeVal = String(getField(r, ["Type","TYPE"]) ?? "").trim();
+        if (typeVal && typeExamples.size < 10) typeExamples.add(typeVal);
+
+        // Keep only Flex Tier2 rows.
+        // Note: some exports use a legacy label like "TIER II TECH" in the Type column
+        // even on the "USA Tier 2 Flex Tech" sheet.
+        const typeNorm = normalizeType(typeVal);
+        const isAllowed = isUsaTier2FlexType(typeVal) || typeNorm === "TIER II TECH";
+        if (!isAllowed) continue;
+
+        const row = [
+          techId,
+          String(getField(r, ["First Name","FirstName","FIRST NAME","FIRST_NAME"]) ?? "").trim(),
+          String(getField(r, ["Last Name","LastName","LAST NAME","LAST_NAME"]) ?? "").trim(),
+          String(getField(r, ["Region","REGION"]) ?? "").trim(),
+          String(getField(r, ["Zone","ZONE"]) ?? "").trim(),
+          typeVal,
+          String(getField(r, ["City","CITY"]) ?? "").trim(),
+          String(getField(r, ["State","STATE"]) ?? "").trim().toUpperCase(),
+          normZip(getField(r, ["Zip","ZIP","Zip Code","ZIP Code","ZIPCODE","ZipCode"]) ?? "")
+        ];
+        rows.push(row);
+      }
+
+      if (!rows.length){
+        const ex = Array.from(typeExamples).slice(0, 8).join(' | ');
+        throw new Error(`No usable rows found in "${lastSheetName}". Expected Type like "USA Tier 2 Flex Tech" or "TIER II TECH". Examples found: ${ex || 'N/A'}`);
+      }
+
+      return { rows, sheet: lastSheetName };
+    }
+
+    function downloadGeneratedTechDbJs(){
+      const rows = getActiveTechRows();
+      if (!Array.isArray(rows) || !rows.length) return;
+      const js = "/* Auto-generated from Techs XLSX (last sheet only). US-only. */\n" +
+                 "window.TECH_DB_ROWS = " + JSON.stringify(rows) + ";\n";
+      const blob = new Blob([js], {type: 'application/javascript;charset=utf-8'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'techdb.js';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    }
+
+    function refreshResultsAfterDbChange(){
+      const hasAny = String($("zipInput").value || "").trim() || String($("stateInput").value || "").trim() || String($("lastNameInput").value || "").trim();
+      if (hasAny) runSearch();
+    }
+
+    // --- Rendering ---
+    // --- Rendering ---
+    function kv(label, value){
+      if (!value) return "";
+      return `<div class="kv"><div class="k">${label}</div><div class="v">${value}</div></div>`;
+    }
+
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, (ch)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[ch]));
+}
+
+function renderList(items, meta){
+  // List mode: show all matches (state-only or last-name search)
+  currentList = [];
+  currentIndex = 0;
+  currentMeta = null;
+
+  $("prevBtn").disabled = true;
+  $("nextBtn").disabled = true;
+
+  const hasTarget = !!(meta && meta.targetZip && ZIP_INDEX.get(meta.targetZip));
+  const header = meta?.mode === "stateOnly"
+    ? `All Flex Techs in ${esc(meta.stateFilter || "")}`
+    : meta?.mode === "lastName"
+      ? `Last name matches: ${esc(meta.lastName || "")}` + (meta.stateFilter ? ` (State: ${esc(meta.stateFilter)})` : "")
+      : "Results";
+
+  let rowsHtml = "";
+  for (let i=0; i<items.length; i++){
+    const t = items[i];
+    let distStr = "";
+    if (hasTarget){
+      const miles = Number.isFinite(t.distance_miles) ? t.distance_miles : NaN;
+      if (Number.isFinite(miles)){
+        const km = miles * 1.609344;
+        distStr = `${miles.toFixed(1)} mi (${km.toFixed(1)} km)`;
+      } else {
+        distStr = "N/A";
+      }
+    }
+    rowsHtml += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${esc(t.tech_id)}</td>
+        <td>${esc(t.first_name)} ${esc(t.last_name)}</td>
+        <td>${esc(t.type)}</td>
+        <td>${esc(t.region)}</td>
+        <td>${esc(t.zone)}</td>
+        <td>${esc(t.city)}</td>
+        <td>${esc(t.state)}</td>
+        <td>${esc(t.zip)}</td>
+        ${hasTarget ? `<td>${distStr}</td>` : ``}
+      </tr>
+    `;
+  }
+
+  resultsDiv.innerHTML = `
+    <div class="tech-card">
+      <div class="tech-name">
+        <span>${header}</span>
+        <span class="badge">${items.length}</span>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tech ID</th>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Region</th>
+              <th>Zone</th>
+              <th>City</th>
+              <th>State</th>
+              <th>ZIP</th>
+              ${hasTarget ? `<th>Distance</th>` : ``}
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+      ${hasTarget ? `<div class="muted" style="margin-top:10px;">Target: ${esc(meta.targetZip)}${meta.targetCity ? ` — ${esc(meta.targetCity)}, ${esc(meta.targetState)}` : ""}</div>` : ""}
+    </div>
+  `;
+}
+
+
+
+    function renderEmpty(msg){
+      resultsDiv.innerHTML = `<div class="empty"><p><strong>${msg}</strong></p><p class="muted">Check the ZIP / state filter, then try again.</p></div>`;
+      $("prevBtn").disabled = true;
+      $("nextBtn").disabled = true;
+    }
+
+    function renderTech(item, index, total, meta){
+      const miles = item.distance_miles;
+      const km = miles * 1.609344;
+      const targetZip = meta.targetZip;
+      const stateFilter = meta.stateFilter || "";
+      const stateName = STATE_ABBR_TO_NAME[stateFilter] || stateFilter;
+
+      resultsDiv.innerHTML = `
+        <div class="tech-card">
+          <div class="tech-name">
+            <span>${item.first_name} ${item.last_name}</span>
+            <span class="badge">${index + 1} / ${total}</span>
+          </div>
+          <div class="grid">
+            ${kv("Tech ID", item.tech_id)}
+            ${kv("Type", item.type)}
+            ${kv("Region", item.region)}
+            ${kv("Zone", item.zone)}
+            ${kv("City", item.city)}
+            ${kv("State", item.state)}
+            ${kv("Tech ZIP", item.zip)}
+            ${kv("Distance", `${miles.toFixed(1)} mi  (${km.toFixed(1)} km)`) }
+            ${kv("Target ZIP", `${targetZip}${meta.targetCity ? ` — ${meta.targetCity}, ${meta.targetState}` : ""}`)}
+            ${stateFilter ? kv("Applied State Filter", `${stateFilter}${stateName ? ` — ${stateName}` : ""}`) : ""}
+          </div>
+        </div>
+      `;
+
+      $("prevBtn").disabled = index <= 0;
+      $("nextBtn").disabled = index >= total - 1;
+    }
+
+    // --- Search state ---
+    let currentList = [];
+    let currentIndex = 0;
+    let currentMeta = null;
+
+    function runSearch(){
+  if (!window.ZIP_DB_ROWS || !Array.isArray(getActiveTechRows())){
+    renderEmpty("zipdb / techdb not loaded.");
+    setStatus("Error: DB not loaded");
+    return;
+  }
+
+  const lastQRaw = String($("lastNameInput")?.value || "").trim();
+  const lastQ = lastQRaw.toUpperCase();
+
+  let stateFilter = toStateAbbr($("stateInput").value);
+  const targetZip = normZip($("zipInput").value);
+
+  // --- Mode A: Last name search (works without ZIP or State) ---
+  if (lastQ){
+    let items = ALL_TIER2_TECHS.filter(t => String(t.last_name || "").toUpperCase().includes(lastQ));
+    // Optional: if state is provided, apply it (not required)
+    if (stateFilter) items = items.filter(t => t.state === stateFilter);
+
+    // If user provided a ZIP, optionally compute distance and sort
+    let meta = { mode: "lastName", lastName: lastQRaw, stateFilter, targetZip, targetCity: "", targetState: "" };
+
+    if (targetZip){
+      const target = ZIP_INDEX.get(targetZip);
+      if (!target){
+        // ZIP invalid -> just list by name (no distance)
+        setStatus(`ZIP ${targetZip} not found — showing last-name matches without distance`);
+        renderList(items, meta);
+        return;
+      }
+      meta.targetCity = target.city ? String(target.city).toUpperCase() : "";
+      meta.targetState = target.state || "";
+
+      const ranked = [];
+      for (const t of items){
+        const loc = ZIP_INDEX.get(t.zip);
+        const d = loc ? haversineMiles(target.lat, target.lon, loc.lat, loc.lon) : NaN;
+        ranked.push({ ...t, distance_miles: d });
+      }
+      ranked.sort((a,b) => {
+        const da = Number.isFinite(a.distance_miles) ? a.distance_miles : 1e18;
+        const db = Number.isFinite(b.distance_miles) ? b.distance_miles : 1e18;
+        return da - db;
+      });
+
+      if (!ranked.length){
+        renderEmpty(`No Tier 2 techs matched last name "${lastQRaw}".`);
+        setStatus("No results");
+        return;
+      }
+
+      setStatus(`${ranked.length} match(es) for "${lastQRaw}"` + (stateFilter ? ` in ${stateFilter}` : "") + ` (distance computed)`);
+      renderList(ranked, meta);
+      return;
+    }
+
+    // No ZIP: just list
+    items.sort((a,b) => (a.last_name+a.first_name).localeCompare(b.last_name+b.first_name));
+    if (!items.length){
+      renderEmpty(`No Tier 2 techs matched last name "${lastQRaw}".`);
+      setStatus("No results");
+      return;
+    }
+    setStatus(`${items.length} match(es) for "${lastQRaw}"` + (stateFilter ? ` in ${stateFilter}` : ""));
+    renderList(items, meta);
+    return;
+  }
+
+  // --- Mode B: State-only list (when ZIP is empty) ---
+  if (!targetZip){
+    if (!stateFilter){
+      renderEmpty("Enter ZIP to find closest, or enter State to list all techs, or enter Last name to search.");
+      setStatus("Missing input");
+      return;
+    }
+    const items = ALL_TIER2_TECHS.filter(t => t.state === stateFilter);
+    if (!items.length){
+      renderEmpty(`No Tier 2 techs found for ${stateFilter}.`);
+      setStatus("No results");
+      return;
+    }
+    items.sort((a,b) => (a.last_name+a.first_name).localeCompare(b.last_name+b.first_name));
+    setStatus(`${items.length} tech(s) found in ${stateFilter}`);
+    renderList(items, { mode: "stateOnly", stateFilter });
+    return;
+  }
+
+  // --- Mode C: Original behavior (ZIP-based ranking) ---
+  const target = ZIP_INDEX.get(targetZip);
+  if (!target){
+    renderEmpty(`ZIP ${targetZip} not found in ZIP database.`);
+    setStatus("ZIP not found");
+    return;
+  }
+
+  // If user left state empty, auto use state from the ZIP
+  if (!stateFilter) stateFilter = String(target.state || "").toUpperCase();
+
+  // Filter techs by state
+  const candidates = ALL_TIER2_TECHS.filter(t => !stateFilter || t.state === stateFilter);
+
+  // Compute distances
+  const ranked = [];
+  for (const t of candidates){
+    const loc = ZIP_INDEX.get(t.zip);
+    if (!loc) continue; // can't compute distance
+    const d = haversineMiles(target.lat, target.lon, loc.lat, loc.lon);
+    if (!Number.isFinite(d)) continue;
+    ranked.push({ ...t, distance_miles: d });
+  }
+
+  ranked.sort((a,b) => a.distance_miles - b.distance_miles);
+
+  if (!ranked.length){
+    renderEmpty(`No Tier 2 techs found for ${stateFilter || "(no state)"}.`);
+    setStatus("No results");
+    return;
+  }
+
+  currentList = ranked;
+  currentIndex = 0;
+  currentMeta = {
+    targetZip,
+    targetCity: target.city ? String(target.city).toUpperCase() : "",
+    targetState: target.state || "",
+    stateFilter
+  };
+
+  setStatus(`${ranked.length} techs ranked (${stateFilter})`);
+  renderTech(currentList[currentIndex], currentIndex, currentList.length, currentMeta);
+}
+
+
+
+    function runFindClosest(){
+      if (!window.ZIP_DB_ROWS || !Array.isArray(getActiveTechRows())){
+        renderEmpty("zipdb / techdb not loaded.");
+        setStatus("Error: DB not loaded");
+        return;
+      }
+
+      // Ticket ZIP is mandatory for Find Closest
+      let targetZip = normZip($("zipInput").value);
+      if (!targetZip){
+        const z = extractZipFromText($("ticketInput").value);
+        if (z){
+          targetZip = normZip(z);
+          $("zipInput").value = targetZip;
+        }
+      }
+
+      if (!targetZip){
+        renderEmpty("Ticket ZIP is required to find closest.");
+        setStatus("Ticket ZIP required");
+        $("zipInput").focus();
+        return;
+      }
+
+      // Force ZIP-based ranking (ignore last-name mode when clicking Find Closest)
+      const savedLast = $("lastNameInput").value;
+      $("lastNameInput").value = "";
+      runSearch();
+      $("lastNameInput").value = savedLast;
+    }
+
+function goNext(){
+      if (!currentList.length) return;
+      if (currentIndex < currentList.length - 1) currentIndex++;
+      renderTech(currentList[currentIndex], currentIndex, currentList.length, currentMeta);
+    }
+
+    function goPrev(){
+      if (!currentList.length) return;
+      if (currentIndex > 0) currentIndex--;
+      renderTech(currentList[currentIndex], currentIndex, currentList.length, currentMeta);
+    }
+
+    function clearAll(){
+      $("stateInput").value = "";
+      $("zipInput").value = "";
+      $("ticketInput").value = "";
+      $("lastNameInput").value = "";
+      currentList = [];
+      currentIndex = 0;
+      currentMeta = null;
+      resultsDiv.innerHTML = "";
+      $("prevBtn").disabled = true;
+      $("nextBtn").disabled = true;
+      setStatus("Ready");
+      $("zipInput").focus();
+    }
+
+    // --- Wire UI ---
+    $("extractBtn").addEventListener("click", () => {
+      const z = extractZipFromText($("ticketInput").value);
+      if (z){
+        $("zipInput").value = normZip(z);
+        setStatus(`Extracted ZIP: ${normZip(z)}`);
+        $("zipInput").focus();
+      } else {
+        setStatus("No ZIP found in ticket text");
+      }
+    });
+
+    $("findBtn").addEventListener("click", runFindClosest);
+
+    // Flex-only Tech DB upload (does not modify files on disk; stored in browser localStorage)
+    if (uploadDbBtn && techDbUpload){
+      uploadDbBtn.addEventListener("click", () => techDbUpload.click());
+      techDbUpload.addEventListener("change", async () => {
+        const f = techDbUpload.files?.[0];
+        if (!f) return;
+        try{
+          setStatus("Loading Flex Tech DB from file...");
+          const {rows, sheet} = await loadFlexTechDbFromFile(f);
+          TECH_ROWS_OVERRIDE = rows;
+          TECH_META_OVERRIDE = { filename: f.name, sheet, updatedAt: new Date().toISOString(), count: rows.length };
+          saveOverrideToStorage(rows, TECH_META_OVERRIDE);
+          setDbPill(`DB: uploaded (${f.name}) — ${rows.length.toLocaleString()}`);
+          if (downloadDbBtn) downloadDbBtn.disabled = false;
+          rebuildTechList();
+          setStatus(`Flex Tech DB Ready: ${rows.length.toLocaleString()} — Sheet: ${sheet}`);
+          refreshResultsAfterDbChange();
+        }catch(e){
+          setStatus(String(e?.message || e), true);
+        }finally{
+          techDbUpload.value = '';
+        }
+      });
+    }
+
+    if (resetDbBtn){
+      resetDbBtn.addEventListener("click", () => {
+        clearOverride();
+        rebuildTechList();
+        setStatus(`Ready — Flex techs loaded: ${ALL_TIER2_TECHS.length.toLocaleString()}`);
+        refreshResultsAfterDbChange();
+      });
+    }
+
+    if (downloadDbBtn){
+      downloadDbBtn.addEventListener("click", downloadGeneratedTechDbJs);
+    }
+
+    $("nextBtn").addEventListener("click", goNext);
+    $("prevBtn").addEventListener("click", goPrev);
+    $("clearBtn").addEventListener("click", clearAll);
+
+    $("zipInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") runFindClosest();
+    });
+
+
+
+
+$("lastNameInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") runSearch();
+});
+    // Small QoL: auto extract when user pastes ticket (only if ZIP field empty)
+    $("ticketInput").addEventListener("input", () => {
+      if ($("zipInput").value.trim()) return;
+      const z = extractZipFromText($("ticketInput").value);
+      if (z) $("zipInput").value = normZip(z);
+    });
+
+
+
+    // Auto list by State (no need to click Find Closest)
+    let stateDebounce = null;
+    $("stateInput").addEventListener("input", () => {
+      clearTimeout(stateDebounce);
+      stateDebounce = setTimeout(() => {
+        const stateFilter = toStateAbbr($("stateInput").value);
+        if (!stateFilter){
+          // If cleared, do nothing (user may be using last-name or ZIP modes)
+          return;
+        }
+
+        const items = ALL_TIER2_TECHS.filter(t => t.state === stateFilter);
+        if (!items.length){
+          renderEmpty(`No Tier 2 techs found for ${stateFilter}.`);
+          setStatus("No results");
+          return;
+        }
+        items.sort((a,b) => (a.last_name+a.first_name).localeCompare(b.last_name+b.first_name));
+        setStatus(`${items.length} tech(s) found in ${stateFilter}`);
+        renderList(items, { mode: "stateOnly", stateFilter });
+      }, 250);
+    });
+
+    // Init DB (use uploaded override if exists)
+    (function initDb(){
+      const hadOverride = loadOverrideFromStorage();
+      if (!hadOverride){
+        const builtinCount = Array.isArray(window.TECH_DB_ROWS) ? window.TECH_DB_ROWS.length : 0;
+        setDbPill(`DB: built-in — ${builtinCount.toLocaleString()}`);
+      }
+      rebuildTechList();
+      setStatus(`Ready — Flex techs loaded: ${ALL_TIER2_TECHS.length.toLocaleString()}`);
+    })();
+  
+</script>
+</body>
+</html>

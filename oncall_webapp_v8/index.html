@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>On‑Call Lookup (ZIP/City + Date)</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <div class="container">
+    <header class="hero">
+      <div>
+        <h1>On‑Call Lookup</h1>
+</div>
+</header>
+
+    <section class="card">
+      <h2>1) Upload the On Call Rotation (Excel) file – weekly</h2>
+      <div class="upload">
+        <input id="oncallFile" class="file" type="file" accept=".xlsx,.xls" />
+        <div class="upload-meta">
+          <div class="file-name" id="oncallName">No file selected</div>
+          <div class="progress"><div id="oncallProg" class="bar"></div></div>
+        </div>
+        <button id="btnLoadOncall" class="primary">Loading and processing</button>
+      </div>
+      <small class="hint">It reads only the first sheet, replaces the area names with ZIP, and ignores any other sheets.</small>
+    </section>
+
+    <section class="card">
+      <h2>2) Upload the Tech Database (Excel) file</h2>
+      <div class="upload">
+        <input id="techFile" class="file" type="file" accept=".xlsx,.xls" />
+        <div class="upload-meta">
+          <div class="file-name" id="techName">No file selected</div>
+          <div class="progress"><div id="techProg" class="bar"></div></div>
+        </div>
+        <button id="btnLoadTech" class="primary">Load Techs</button>
+      </div>
+      <small class="hint">It reads only the first sheet and ignores Canada entirely.</small>
+    </section>
+
+    <section class="card">
+      <h2>3) Research</h2>
+
+      <div class="grid">
+        <label>ZIP Code (US) (Optional)
+          <input id="zipInput" inputmode="numeric" placeholder="Example: 75201" maxlength="5" />
+        </label>
+        <label>City (optional if you enter ZIP)
+          <input id="cityInput" placeholder="Example: Austin" />
+        </label>
+        <label>State (2-letter) (Required)<input id="stateInput" placeholder="Example: TX" maxlength="2" required pattern="[A-Za-z]{2}" title="Enter 2-letter state code (e.g., TX)" />
+        </label>
+      </div>
+
+      <div class="grid">
+        <label>Date
+          <input id="dateInput" type="date" />
+        </label>
+        <div id="ampmWrap" class="ampm-wrap" style="display:none">
+        <div class="ampm-label">Ticket time (only required if you choose End Date)</div>
+        <div class="ampm-toggle" role="radiogroup" aria-label="Ticket time AM/PM">
+          <label class="ampm-option">
+            <input type="radio" name="ampm" value="AM" />
+            <span>Morning (12:00 AM → 12:00 PM)</span>
+          </label>
+          <label class="ampm-option">
+            <input type="radio" name="ampm" value="PM" />
+            <span>Evening (1:00 PM → 11:59 PM)</span>
+          </label>
+        </div>
+      </div>
+        <div></div>
+      </div>
+
+      <div class="row">
+        <button id="btnLookup" class="primary big">View Tech</button>
+        <button id="btnDownload" class="secondary big" disabled>Download the sheet after the exchange</button>
+      </div>
+      <div id="status" class="status"></div>
+    </section>
+
+    <section class="card">
+      <h2>Result</h2>
+      <div id="result" class="result"><p class="muted">Upload the files and then perform the search.</p></div>
+    </section>
+
+    <footer class="foot">
+      <p class="muted">Instead of ZIP Ranges, the application uses a local ZIP rule within the project to determine the nearest market by distance.</p>
+    </footer>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="zipdb.js"></script>
+  <script src="techdb.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
